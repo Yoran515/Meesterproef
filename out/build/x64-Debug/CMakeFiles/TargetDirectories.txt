@@ -1,0 +1,3 @@
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/out/build/x64-Debug/CMakeFiles/Raylib_Test.dir
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir

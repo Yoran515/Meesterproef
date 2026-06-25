@@ -1,0 +1,3 @@
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/build/CMakeFiles/Raylib_Test.dir
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Yoort/OneDrive/VSCode_Project/ORBICUBE/build/CMakeFiles/ZERO_CHECK.dir
