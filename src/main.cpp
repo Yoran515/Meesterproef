@@ -20,7 +20,7 @@ struct Platform {
     bool ghost = false;
     bool visible = true;
     float timer = 0.0f;
-    float visibleTime = 3.0f;
+    float visibleTime = 2.0f;
     float hiddenTime = 2.0f;
 };
 
@@ -172,9 +172,12 @@ static Color MSWoff()   { return { 188, 48,  48,  255 }; }
 
 static bool PlatActive(const Platform& pl, ShapeType s)
 {
-    if (!pl.solid)                                          return false;
+    if (!pl.solid)                                         return false;
+    if (pl.ghost && !pl.visible)                           return false;
+
     if (pl.modeVis == 1 && s != ShapeType::Cube)           return false;
     if (pl.modeVis == 2 && s != ShapeType::Sphere)         return false;
+
     return true;
 }
 
@@ -184,11 +187,31 @@ static void DrawPlatform(const Platform& p, ShapeType cur)
     if (p.modeVis == 1 && cur != ShapeType::Cube)   return;
     if (p.modeVis == 2 && cur != ShapeType::Sphere) return;
     if (!p.solid) return;
+    if(!p.visible&& p.ghost) return;
+
+    //Flickering animatie
+    if(p.ghost)
+    {
+        float timeleft = p.visibleTime - p.timer;
+        if(timeleft <0.8f)
+        {
+            bool flickeroff =((int)(p.timer*18.0f)%2 ==0);
+            if(flickeroff)
+            {
+                return;
+            }
+        }
+    }
 
     Color top  = p.top,  side = p.side;
     if (p.modeVis == 1) { top = MCubeCol(); side = ColorBrightness(MCubeCol(), -0.35f); }
     if (p.modeVis == 2) { top = MSphCol();  side = ColorBrightness(MSphCol(),  -0.35f); }
 
+    if (p.ghost)
+    {
+    top.a = 150;
+    side.a = 110;
+    }
     DrawCube(p.pos, p.size.x, p.size.y, p.size.z, side);
 
     float capH = 0.28f;
@@ -417,6 +440,19 @@ int main()
         pl.origZ = z;
         world.push_back(pl);
     };
+    auto AddGhostPlat = [&](float x, float y, float w, float d, float z, float visibleTime,float hiddentime, float timer) {
+        Platform pl = { {x,PY(y),z},{w,THICKNESS,d}, {170, 220, 255, 150}, {80, 120, 180, 120}, 0, true };
+
+        pl.origZ = z;
+        pl.ghost =true;
+        pl.visible = true;
+        pl.timer = 0.0f;
+        pl.visibleTime = visibleTime;
+        pl.hiddenTime = hiddentime;
+        pl.timer =  timer;
+        
+        world.push_back(pl);
+    };
 
     // Plaatsen van de platforms
     AddPlat(  0, GROUND,  16, 16,  0, MGrass(), MDirt());
@@ -432,11 +468,15 @@ int main()
     bridge.origZ = 0;
     world.push_back(bridge);
     AddPlat(89, GROUND,  8, 11, 25, MGrass(), MDirt());
+    
+  
 
     AddPlat(105, GROUND,  10, 13,   0, MGrass(), MDirt());
-    AddPlat(119, HEIGHT_MID,  8, 10,   0, MWood(),  MDkWood());
-    AddPlat(143, HEIGHT_MID,  8, 10,   0, MWood(),  MDkWood());
-    AddPlat(155, GROUND,  12, 14,   0, MGrass(), MDirt());
+    AddGhostPlat(119, HEIGHT_MID,  8, 10,   0, 2.0f, 2.0f,1.2f);
+
+    AddGhostPlat(143, HEIGHT_MID, 8, 10, 0, 2.0f, 2.0f,0.5f);
+    AddPlat(155, GROUND, 12, 14, 0, MWood(),  MDkWood());
+
     AddSpherePlat(131, HEIGHT_MID, 8,  6, -11);
 
     std::vector<Switch> switches;
@@ -450,7 +490,7 @@ int main()
     checkpoints .push_back({ { 55, 1, 0}, false });
     checkpoints .push_back({ {105, 1, 0}, false });
     checkpoints .push_back({ {155, 1, 0}, false });
-    int activeCheckpoint  = 0;
+    int activeCheckpoint  = 2;
     const int LAST_CP = (int)checkpoints.size() - 1;
 
     struct HillObj  { float x, y, z, r; };
@@ -472,7 +512,8 @@ int main()
     Camera3D cam = {};
     cam.fovy = 60; cam.up = { 0,1,0 }; cam.projection = CAMERA_PERSPECTIVE;
 
-    Player player; player.pos = { 0, 3, 0 };
+    Player player; player.pos =  checkpoints[activeCheckpoint].pos;
+    player.pos.y = 3;
     // Einde van setup
 
     float yaw   = 0;
@@ -512,7 +553,7 @@ int main()
     {
         player       = Player();
         player.pos   = { 0, 3, 0 };
-        activeCheckpoint     = 0;
+        activeCheckpoint     = 2;
 
         for (auto& cp : checkpoints ) cp.on = false;
         checkpoints [0].on = true;
@@ -614,8 +655,24 @@ int main()
         UpdateParts(dt);
 
         for (auto& pl : world)
+        {
             pl.pos.z = Lerp(pl.pos.z, (player.shape == ShapeType::Cube) ? 0.f : pl.origZ, 9.f * dt);
 
+            if(pl.ghost)
+            {
+                pl.timer += dt;
+                if(pl.visible && pl.timer >= pl.visibleTime)
+                {
+                    pl.visible = false;
+                    pl.timer = 0.0f;
+                }
+                else if(!pl.visible && pl.timer >= pl.hiddenTime)
+                {
+                    pl.visible = true;
+                    pl.timer = 0.0f;
+                }
+            }
+        }
         for (auto& movPlat  : movPlats)
         {
             movPlat.prevX = movPlat .cur;
@@ -634,10 +691,13 @@ int main()
         for (auto& pl : world)
         {
             if (!PlatActive(pl, player.shape)) continue;
+
             Hit h = BoxHit(player, pl);
             if (!h.collided) continue;
+
             bool isFloor = (h.normal.y > 0.7f && preVelY <= 0);
             Resolve(player, h);
+
             if (isFloor) player.OnLand(pl.pos.y + pl.size.y*.5f, fabsf(preVelY));
         }
 
