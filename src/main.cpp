@@ -190,17 +190,17 @@ static void DrawPlatform(const Platform& p, ShapeType cur)
     if(!p.visible&& p.ghost) return;
 
     //Flickering animatie
-    if(p.ghost)
+    if(p.ghost&& p.visible)
     {
-        float timeleft = p.visibleTime - p.timer;
-        if(timeleft <0.8f)
-        {
-            bool flickeroff =((int)(p.timer*18.0f)%2 ==0);
-            if(flickeroff)
+            float timeleft = p.visibleTime - p.timer;
+            if(timeleft <0.8f)
             {
-                return;
+                bool flickeroff =((int)(p.timer*14.0f)%2 ==0);
+                if(flickeroff)
+                {
+                    return;
+                }
             }
-        }
     }
 
     Color top  = p.top,  side = p.side;
@@ -212,6 +212,7 @@ static void DrawPlatform(const Platform& p, ShapeType cur)
     top.a = 150;
     side.a = 110;
     }
+    
     DrawCube(p.pos, p.size.x, p.size.y, p.size.z, side);
 
     float capH = 0.28f;
@@ -469,7 +470,8 @@ int main()
     world.push_back(bridge);
     AddPlat(89, GROUND,  8, 11, 25, MGrass(), MDirt());
     
-  
+    
+
 
     AddPlat(105, GROUND,  10, 13,   0, MGrass(), MDirt());
     AddGhostPlat(119, HEIGHT_MID,  8, 10,   0, 2.0f, 2.0f,1.2f);
@@ -573,7 +575,7 @@ int main()
         camPos = { 0, 7, 24 }; camTgt = { 0, 2, 0 }; camFov = 60;
         modePillT = 0; winTime = 0;
     };
-
+    
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
@@ -658,21 +660,31 @@ int main()
         {
             pl.pos.z = Lerp(pl.pos.z, (player.shape == ShapeType::Cube) ? 0.f : pl.origZ, 9.f * dt);
 
-            if(pl.ghost)
+            if (pl.ghost)
             {
-                pl.timer += dt;
-                if(pl.visible && pl.timer >= pl.visibleTime)
+                if (pl.visible)
                 {
-                    pl.visible = false;
-                    pl.timer = 0.0f;
+                    pl.timer += dt;
+
+                    if (pl.timer >= pl.visibleTime)
+                    {
+                        pl.visible = false;
+                        pl.timer = 0.0f;
+                    }
                 }
-                else if(!pl.visible && pl.timer >= pl.hiddenTime)
+                else
                 {
-                    pl.visible = true;
-                    pl.timer = 0.0f;
+                    pl.timer += dt;
+
+                    if (pl.timer >= pl.hiddenTime)
+                    {
+                        pl.visible = true;
+                        pl.timer = 0.0f;
+                    }
                 }
             }
         }
+    
         for (auto& movPlat  : movPlats)
         {
             movPlat.prevX = movPlat .cur;
@@ -974,6 +986,7 @@ int main()
         }
 
         DrawFPS(scrW - 88, scrH - 26);
+        
         EndDrawing();
     }
 

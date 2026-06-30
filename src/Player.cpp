@@ -3,9 +3,12 @@
 #include "rlgl.h"
 #include <cmath>
 #include <vector>
+#include <iostream>
+
 
 static constexpr float GRAVITY    = 26.f;
 static constexpr float JUMP_FORCE = 10.5f;
+
 
 static constexpr float CUBE_MAX = 9.0f,  CUBE_ACC = 58.f, CUBE_DEC = 70.f;
 static constexpr float SPH_MAX  = 11.5f, SPH_ACC  = 9.8f, SPH_DEC  = 2.5f;
