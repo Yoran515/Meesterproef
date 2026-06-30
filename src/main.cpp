@@ -661,11 +661,10 @@ int main()
             pl.pos.z = Lerp(pl.pos.z, (player.shape == ShapeType::Cube) ? 0.f : pl.origZ, 9.f * dt);
 
             if (pl.ghost)
-            {
+            {                 
+                pl.timer += dt;
                 if (pl.visible)
                 {
-                    pl.timer += dt;
-
                     if (pl.timer >= pl.visibleTime)
                     {
                         pl.visible = false;
@@ -674,8 +673,6 @@ int main()
                 }
                 else
                 {
-                    pl.timer += dt;
-
                     if (pl.timer >= pl.hiddenTime)
                     {
                         pl.visible = true;
